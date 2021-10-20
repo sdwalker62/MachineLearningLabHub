@@ -5,24 +5,24 @@
 version: "2"
 
 services:
-  # hub-db:
-  #   image: postgres:9.5
-  #   container_name: jupyterhub-db
-  #   restart: always
-  #   environment:
-  #     POSTGRES_DB: ${POSTGRES_DB}
-  #     PGDATA: ${DB_VOLUME_CONTAINER}
-  #   env_file:
-  #     - secrets/postgres.env
-  #   volumes:
-  #     - "db:${DB_VOLUME_CONTAINER}"
+  hub-db:
+    image: postgres:9.5
+    container_name: jupyterhub-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      PGDATA: ${DB_VOLUME_CONTAINER}
+    env_file:
+      - secrets/postgres.env
+    volumes:
+      - "db:${DB_VOLUME_CONTAINER}"
 
   hub:
-    # depends_on:
-    #   - hub-db
+    depends_on:
+      - hub-db
     build:
       context: .
-      dockerfile: Dockerfile.hub
+      dockerfile: Dockerfile.jupyterhub
       args:
         JUPYTERHUB_VERSION: ${JUPYTERHUB_VERSION}
     restart: always
@@ -36,8 +36,8 @@ services:
       - "data:${DATA_VOLUME_CONTAINER}"
     ports:
       - "443:443"
-    # links:
-    #   - hub-db
+    links:
+      - hub-db
     environment:
       # All containers will join this network
       DOCKER_NETWORK_NAME: ${DOCKER_NETWORK_NAME}
@@ -48,13 +48,14 @@ services:
       # Using this run command (optional)
       DOCKER_SPAWN_CMD: ${DOCKER_SPAWN_CMD}
       # Postgres db info
-      # POSTGRES_DB: ${POSTGRES_DB}
-      # POSTGRES_HOST: hub-db
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: hub-db
     env_file:
       - secrets/postgres.env
       - secrets/oauth.env
     command: >
       jupyterhub -f /srv/jupyterhub/jupyterhub_config.py
+
 volumes:
   data:
     external:
